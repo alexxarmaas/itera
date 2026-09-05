@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./labbook.css";
 
 export const metadata: Metadata = {
-  title: "Itera — Prueba. Mide. Decide.",
-  description: "Pequeños experimentos personales para descubrir qué te funciona de verdad.",
+  title: "Itera — Tu laboratorio personal",
+  description: "Prueba cambios pequeños, mide una señal y descubre qué te funciona de verdad.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
