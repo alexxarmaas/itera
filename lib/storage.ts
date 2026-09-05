@@ -10,6 +10,12 @@ function isoDate(offsetDays = 0) {
   return date.toISOString().slice(0, 10);
 }
 
+function dateDiff(start: string, end: string) {
+  const a = new Date(`${start}T12:00:00`);
+  const b = new Date(`${end}T12:00:00`);
+  return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 86400000));
+}
+
 const seed: Experiment[] = [
   {
     id: "demo-phone",
@@ -68,6 +74,51 @@ export function saveExperiment(experiment: Experiment) {
   return experiment;
 }
 
+export function deleteExperiment(id: string) {
+  saveExperiments(loadExperiments().filter((experiment) => experiment.id !== id));
+}
+
+export function pauseExperiment(id: string) {
+  const experiment = getExperiment(id);
+  if (!experiment || experiment.status !== "active") return experiment;
+  return saveExperiment({ ...experiment, status: "paused", pausedAt: todayKey() });
+}
+
+export function resumeExperiment(id: string) {
+  const experiment = getExperiment(id);
+  if (!experiment || experiment.status !== "paused") return experiment;
+  const addedPausedDays = experiment.pausedAt ? dateDiff(experiment.pausedAt, todayKey()) : 0;
+  return saveExperiment({
+    ...experiment,
+    status: "active",
+    pausedAt: undefined,
+    pausedDays: (experiment.pausedDays ?? 0) + addedPausedDays,
+  });
+}
+
+export function archiveExperiment(id: string) {
+  const experiment = getExperiment(id);
+  if (!experiment || experiment.status === "completed") return experiment;
+  return saveExperiment({ ...experiment, status: "abandoned", abandonedDate: todayKey(), pausedAt: undefined });
+}
+
+export function duplicateExperiment(id: string) {
+  const experiment = getExperiment(id);
+  if (!experiment) return undefined;
+  const duplicate: Experiment = {
+    ...experiment,
+    id: `${experiment.id.split("-").slice(0, 2).join("-") || "experiment"}-${Date.now()}`,
+    startDate: todayKey(),
+    status: "active",
+    entries: [],
+    completedDate: undefined,
+    abandonedDate: undefined,
+    pausedAt: undefined,
+    pausedDays: 0,
+  };
+  return saveExperiment(duplicate);
+}
+
 export function createFromTemplate(template: ExperimentTemplate) {
   const { slug: _slug, ...templateData } = template;
   const experiment: Experiment = {
@@ -76,6 +127,7 @@ export function createFromTemplate(template: ExperimentTemplate) {
     startDate: isoDate(0),
     status: "active",
     entries: [],
+    pausedDays: 0,
   };
   return saveExperiment(experiment);
 }
