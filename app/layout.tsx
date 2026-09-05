@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./labbook.css";
 import "./labbook-polish.css";
+import "./ui-pass.css";
 
 export const metadata: Metadata = {
   title: "Itera — Tu laboratorio personal",

@@ -1,4 +1,4 @@
-export type ExperimentStatus = "active" | "completed";
+export type ExperimentStatus = "active" | "paused" | "completed" | "abandoned";
 
 export type ExperimentEntry = {
   date: string;
@@ -17,6 +17,9 @@ export type Experiment = {
   startDate: string;
   status: ExperimentStatus;
   completedDate?: string;
+  abandonedDate?: string;
+  pausedAt?: string;
+  pausedDays?: number;
   hypothesis: string;
   metricLabel: string;
   metricMin: number;
