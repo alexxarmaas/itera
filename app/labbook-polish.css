@@ -1,0 +1,103 @@
+/* Itera Labbook — polish layer. Loaded after the base visual system. */
+
+html,body{max-width:100%;overflow-x:clip}
+
+/* Brand mark: iteration loop + observation point */
+.brand-mark{
+  position:relative!important;width:30px!important;height:30px!important;display:grid!important;place-items:center!important;
+  font-size:0!important;border-radius:7px!important;transform:none!important;overflow:hidden;
+}
+.brand-mark:before{
+  content:"";position:absolute;width:15px;height:15px;border:2px solid var(--lab-acid);border-right-color:transparent;border-radius:50%;transform:rotate(-32deg);
+}
+.brand-mark:after{
+  content:"";position:absolute;width:5px;height:5px;background:var(--lab-acid);border-radius:1px;right:6px;top:6px;box-shadow:-11px 12px 0 rgba(220,255,79,.45);
+}
+
+/* Hero specimen — denser, calmer and responsive */
+.lab-specimen-wrap{width:min(100%,480px);justify-self:end;margin-inline:auto;transform:none!important}
+.lab-specimen-wrap:before{inset:-15px -18px 18px 22px!important;opacity:.7}
+.lab-specimen-wrap:after{right:-25px!important;top:-24px!important}
+.specimen-index{display:flex!important;justify-content:space-between;align-items:center;margin:0 2px 10px!important;padding-inline:2px}
+.specimen-index span:last-child{color:#a2a69b}
+.lab-specimen{padding:24px 24px 18px!important;transform:rotate(.35deg)!important;box-shadow:8px 10px 0 rgba(23,25,20,.05),0 18px 55px rgba(31,33,25,.065)!important}
+.specimen-head{gap:16px}
+.specimen-head>div{min-width:0}.specimen-head small{max-width:150px!important}
+.specimen-emoji{width:44px!important;height:44px!important;font-size:21px!important;flex:none}
+.lab-specimen h2{font-size:clamp(27px,3.2vw,35px)!important;line-height:.98!important;letter-spacing:-1.6px!important;margin:24px 0 16px!important;max-width:390px}
+.specimen-hypothesis{font-size:12px!important;line-height:1.45!important;padding:12px 0!important;margin:0}
+.specimen-readout{grid-template-columns:.72fr 1.28fr!important;gap:14px!important;padding:18px 0 15px!important;align-items:stretch}
+.specimen-signal{display:flex;flex-direction:column;justify-content:center}
+.specimen-signal small{font:700 8px monospace;color:#92968b;letter-spacing:1px}
+.specimen-signal strong{font-size:46px!important;line-height:.9!important;letter-spacing:-3px!important;color:var(--lab-green)}
+.specimen-signal span{font-size:10px;color:var(--lab-muted);margin-top:5px}
+.specimen-scale{padding:10px!important;min-width:0}
+.specimen-scale strong{font-size:20px!important}
+.specimen-verdict{margin:0!important;padding:12px 14px!important;border-radius:2px}
+.specimen-foot{display:flex;justify-content:space-between;gap:12px;padding:11px 2px 0;font:700 7px/1 monospace;letter-spacing:1.1px;color:#93978c}
+
+/* Library ergonomics */
+.library-tools{display:flex;align-items:center;gap:12px;margin:-8px 0 14px}
+.library-search{height:46px;flex:1;display:flex;align-items:center;gap:10px;background:var(--lab-paper);border:1px solid var(--lab-line-strong);padding:0 14px;border-radius:3px;box-shadow:3px 4px 0 rgba(23,25,20,.025)}
+.library-search>span{font:18px/1 monospace;color:#777c70}.library-search input{width:100%;border:0;outline:0;background:transparent;color:var(--lab-ink);font-size:13px}
+.library-search input::placeholder{color:#9ca095}.library-search:focus-within{border-color:#7b8f47;box-shadow:0 0 0 3px rgba(220,255,79,.28)}
+.library-count{font:700 8px monospace;letter-spacing:1.1px;color:#858a7e;white-space:nowrap;border:1px solid var(--lab-line);padding:9px 10px;background:rgba(255,253,247,.62)}
+.lab-catalog-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.lab-catalog-card .button-accent{margin-top:2px}
+.lab-catalog-card:hover{border-color:#aeb69a!important}
+.lab-catalog-card:hover .experiment-icon{transform:rotate(-4deg) scale(1.04)}
+.lab-catalog-card .experiment-icon{transition:transform .2s ease}
+
+/* Microinteractions */
+.button,.experiment-card,.catalog-card,.filter-chip,.nav-cta,.side-link{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease,color .18s ease}
+.filter-chip:hover{transform:translateY(-1px);border-color:#aeb39f}
+.nav-cta:hover{transform:translateY(-1px);border-color:#9da58a}
+.experiment-card:active,.catalog-card:active,.button:active{transform:translateY(1px)!important}
+:where(a,button,input,select,textarea):focus-visible{outline:2px solid var(--lab-ink);outline-offset:3px}
+.range{accent-color:var(--lab-green)}
+
+@keyframes labPulse{0%,100%{box-shadow:0 0 0 3px rgba(220,255,79,.16)}50%{box-shadow:0 0 0 6px rgba(220,255,79,.06)}}
+@keyframes specimenDrift{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:no-preference){
+  .lab-status i,.side-status i,.verdict-dot{animation:labPulse 2.6s ease-in-out infinite}
+  .lab-specimen-wrap{animation:specimenDrift 7s ease-in-out infinite}
+}
+
+/* Mobile: the specimen becomes a compact data card, not an A4 sheet */
+@media(max-width:900px){
+  .lab-hero{grid-template-columns:1fr!important;gap:48px!important;padding:68px 0 88px!important}
+  .lab-specimen-wrap{justify-self:center;width:min(100%,520px)}
+}
+
+@media(max-width:700px){
+  .labbook-landing{overflow-x:clip!important}
+  .lab-nav{height:66px!important}.lab-status{display:none!important}.lab-nav-actions{gap:8px!important}
+  .lab-hero{gap:38px!important;padding:48px 0 70px!important}
+  .lab-hero-copy h1{font-size:clamp(45px,13vw,58px)!important;line-height:.91!important;letter-spacing:-3.4px!important}
+  .lab-hero-copy h1 span{letter-spacing:-2.8px!important}
+  .lab-hero-copy .hero-copy{font-size:15px!important;line-height:1.5!important;margin-top:22px!important}
+  .lab-hero-copy .hero-actions{margin-top:25px!important}
+  .lab-specimen-wrap{width:100%!important;max-width:100%!important;padding:0 2px}
+  .lab-specimen-wrap:before{inset:-7px 7px 12px -7px!important}.lab-specimen-wrap:after{display:none}
+  .specimen-index{margin-bottom:8px!important;font-size:8px!important}
+  .lab-specimen{padding:18px 17px 14px!important;transform:none!important;box-shadow:5px 7px 0 rgba(23,25,20,.045),0 12px 30px rgba(31,33,25,.05)!important}
+  .lab-specimen:after{right:12px!important;bottom:10px!important;opacity:.55}
+  .specimen-head{align-items:center!important}.specimen-head>div{gap:9px!important}.specimen-head small{font-size:7px!important;max-width:118px!important}.specimen-emoji{width:38px!important;height:38px!important;font-size:18px!important}
+  .lab-badge{font-size:7px!important;padding:5px 6px!important;white-space:nowrap}
+  .lab-specimen h2{font-size:27px!important;line-height:.98!important;letter-spacing:-1.4px!important;margin:20px 0 13px!important;max-width:310px}
+  .specimen-hypothesis{font-size:11px!important;line-height:1.42!important;padding:10px 0!important}.specimen-hypothesis span{font-size:7px!important}
+  .specimen-readout{grid-template-columns:.72fr 1.28fr!important;gap:10px!important;padding:14px 0!important}
+  .specimen-signal strong{font-size:39px!important}.specimen-signal span{font-size:9px!important}
+  .specimen-scale{padding:8px 6px!important;gap:5px!important}.specimen-scale small{font-size:6px!important}.specimen-scale strong{font-size:18px!important}.specimen-scale>span{font-size:14px}
+  .specimen-verdict{padding:10px 11px!important;gap:9px!important}.specimen-verdict small{font-size:6px!important}.specimen-verdict strong{font-size:12px!important}
+  .specimen-foot{padding-top:9px!important;font-size:6px!important;letter-spacing:.75px!important;padding-right:42px}
+  .library-tools{align-items:stretch;flex-direction:column;margin-top:-12px}.library-count{align-self:flex-start}
+  .lab-catalog-card{padding:20px!important}
+}
+
+@media(max-width:370px){
+  .specimen-readout{grid-template-columns:1fr!important}.specimen-scale{margin-top:2px}.specimen-signal{flex-direction:row;align-items:baseline;gap:7px;flex-wrap:wrap}.specimen-signal small{width:100%}.specimen-signal span{margin:0}
+  .specimen-foot{flex-direction:column;gap:4px}
+}
+
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}

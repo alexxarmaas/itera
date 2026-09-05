@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./labbook.css";
+import "./labbook-polish.css";
 
 export const metadata: Metadata = {
   title: "Itera — Tu laboratorio personal",
