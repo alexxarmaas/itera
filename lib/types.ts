@@ -1,10 +1,16 @@
 export type ExperimentStatus = "active" | "paused" | "completed" | "abandoned";
+export type ExperimentMode = "single" | "ab";
+export type ExperimentPhase = "baseline" | "test";
+export type ExperimentVariant = "A" | "B";
+export type ExperimentDecision = "keep" | "discard" | "repeat" | "variant";
 
 export type ExperimentEntry = {
   date: string;
   completed: boolean;
   value: number;
   note?: string;
+  phase?: ExperimentPhase;
+  variant?: ExperimentVariant;
 };
 
 export type Experiment = {
@@ -27,6 +33,14 @@ export type Experiment = {
   metricUnit: string;
   baseline: number;
   entries: ExperimentEntry[];
+  mode?: ExperimentMode;
+  phase?: ExperimentPhase;
+  baselineDays?: number;
+  baselineCompletedDate?: string;
+  variantA?: string;
+  variantB?: string;
+  decision?: ExperimentDecision;
+  decisionNote?: string;
 };
 
 export type ExperimentTemplate = {
@@ -42,4 +56,5 @@ export type ExperimentTemplate = {
   metricMax: number;
   metricUnit: string;
   baseline: number;
+  baselineDays?: number;
 };
