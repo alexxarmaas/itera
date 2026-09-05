@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Experiment } from "@/lib/types";
+import { experimentMetrics } from "@/lib/results";
 
 function diffDays(start: string) {
   const startDate = new Date(`${start}T12:00:00`);
@@ -10,18 +11,22 @@ function diffDays(start: string) {
 
 export default function ExperimentCard({ experiment }: { experiment: Experiment }) {
   const day = Math.min(diffDays(experiment.startDate), experiment.durationDays);
-  const progress = Math.round((day / experiment.durationDays) * 100);
-  const completed = experiment.entries.filter((entry) => entry.completed).length;
-  const average = completed ? experiment.entries.filter((entry) => entry.completed).reduce((sum, entry) => sum + entry.value, 0) / completed : experiment.baseline;
-  const delta = ((average - experiment.baseline) / Math.max(experiment.baseline, 0.1)) * 100;
+  const progress = experiment.status === "completed" ? 100 : Math.round((day / experiment.durationDays) * 100);
+  const metrics = experimentMetrics(experiment);
 
   return (
     <Link className="experiment-card" href={`/app/experiments/${experiment.id}`}>
-      <div className="experiment-card-top"><span className="experiment-icon">{experiment.emoji}</span><span className="pill">Día {day}/{experiment.durationDays}</span></div>
+      <div className="experiment-card-top">
+        <span className="experiment-icon">{experiment.emoji}</span>
+        <span className={experiment.status === "completed" ? "pill pill-done" : "pill"}>{experiment.status === "completed" ? "Resultado" : `Día ${day}/${experiment.durationDays}`}</span>
+      </div>
       <h3>{experiment.title}</h3>
       <p>{experiment.metricLabel}</p>
       <div className="progress-track"><span style={{ width: `${progress}%` }} /></div>
-      <div className="experiment-stats"><span><small>Ahora</small><strong>{average.toFixed(1)}{experiment.metricUnit}</strong></span><span><small>Cambio</small><strong className={delta >= 0 ? "positive" : "negative"}>{delta >= 0 ? "+" : ""}{delta.toFixed(0)}%</strong></span></div>
+      <div className="experiment-stats">
+        <span><small>{experiment.status === "completed" ? "Resultado" : "Ahora"}</small><strong>{metrics.average.toFixed(1)}{experiment.metricUnit}</strong></span>
+        <span><small>Cambio</small><strong className={metrics.delta >= 0 ? "positive" : "negative"}>{metrics.delta >= 0 ? "+" : ""}{metrics.delta.toFixed(0)}%</strong></span>
+      </div>
     </Link>
   );
 }

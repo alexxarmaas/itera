@@ -16,6 +16,7 @@ export type Experiment = {
   durationDays: number;
   startDate: string;
   status: ExperimentStatus;
+  completedDate?: string;
   hypothesis: string;
   metricLabel: string;
   metricMin: number;
