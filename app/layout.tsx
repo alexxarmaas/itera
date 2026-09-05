@@ -3,6 +3,7 @@ import "./globals.css";
 import "./labbook.css";
 import "./labbook-polish.css";
 import "./ui-pass.css";
+import "./method-pass.css";
 
 export const metadata: Metadata = {
   title: "Itera — Tu laboratorio personal",
