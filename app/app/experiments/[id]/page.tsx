@@ -35,16 +35,17 @@ export default function ExperimentDetailPage() {
 
   if (!experiment) return <main className="product-page"><div className="empty-state"><span>🧪</span><h2>No encontramos este experimento.</h2><Link className="button button-primary" href="/app">Volver al inicio</Link></div></main>;
 
-  const metrics = experimentMetrics(experiment);
-  const day = Math.min(daysBetween(experiment.startDate), experiment.durationDays);
-  const progress = experiment.status === "completed" ? 100 : Math.round((day / experiment.durationDays) * 100);
+  const current = experiment;
+  const metrics = experimentMetrics(current);
+  const day = Math.min(daysBetween(current.startDate), current.durationDays);
+  const progress = current.status === "completed" ? 100 : Math.round((day / current.durationDays) * 100);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const date = todayKey();
     const entry = { date, completed, value, note: note.trim() || undefined };
-    const exists = experiment.entries.some((item) => item.date === date);
-    const next = { ...experiment, entries: exists ? experiment.entries.map((item) => item.date === date ? entry : item) : [...experiment.entries, entry] };
+    const exists = current.entries.some((item) => item.date === date);
+    const next: Experiment = { ...current, entries: exists ? current.entries.map((item) => item.date === date ? entry : item) : [...current.entries, entry] };
     saveExperiment(next);
     setExperiment(next);
     setSaved(true);
@@ -53,24 +54,24 @@ export default function ExperimentDetailPage() {
 
   function finishExperiment() {
     if (metrics.done < 3) return;
-    const next: Experiment = { ...experiment, status: "completed", completedDate: todayKey() };
+    const next: Experiment = { ...current, status: "completed", completedDate: todayKey() };
     saveExperiment(next);
     setExperiment(next);
   }
 
   function shareUrl() {
     const query = new URLSearchParams({
-      title: experiment.title,
-      emoji: experiment.emoji,
-      category: experiment.category,
-      metric: experiment.metricLabel,
-      unit: experiment.metricUnit,
-      baseline: experiment.baseline.toFixed(1),
+      title: current.title,
+      emoji: current.emoji,
+      category: current.category,
+      metric: current.metricLabel,
+      unit: current.metricUnit,
+      baseline: current.baseline.toFixed(1),
       average: metrics.average.toFixed(1),
       delta: metrics.delta.toFixed(0),
       days: String(day),
-      duration: String(experiment.durationDays),
-      hypothesis: experiment.hypothesis,
+      duration: String(current.durationDays),
+      hypothesis: current.hypothesis,
       checks: String(metrics.done),
     });
     return `${window.location.origin}/share?${query.toString()}`;
@@ -78,7 +79,7 @@ export default function ExperimentDetailPage() {
 
   async function shareResult() {
     const url = shareUrl();
-    const text = `${experiment.emoji} Probé “${experiment.title}” en Itera. ${metrics.verdict}. ${metrics.delta >= 0 ? "+" : ""}${metrics.delta.toFixed(0)}% en ${experiment.metricLabel.toLowerCase()}.`;
+    const text = `${current.emoji} Probé “${current.title}” en Itera. ${metrics.verdict}. ${metrics.delta >= 0 ? "+" : ""}${metrics.delta.toFixed(0)}% en ${current.metricLabel.toLowerCase()}.`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "Mi resultado en Itera", text, url });
@@ -93,21 +94,21 @@ export default function ExperimentDetailPage() {
     }
   }
 
-  if (experiment.status === "completed") {
+  if (current.status === "completed") {
     return (
       <main className="product-page detail-page">
         <Link className="back-link" href="/app">← Mis experimentos</Link>
         <section className="final-result">
-          <div className="final-result-top"><span className="experiment-icon xl">{experiment.emoji}</span><span className="pill pill-done">Experimento terminado</span></div>
+          <div className="final-result-top"><span className="experiment-icon xl">{current.emoji}</span><span className="pill pill-done">Experimento terminado</span></div>
           <p className="eyebrow">TU RESULTADO</p>
-          <h1>{experiment.title}</h1>
+          <h1>{current.title}</h1>
           <p className={`final-verdict ${metrics.tone}`}>{metrics.verdict}.</p>
-          <div className="final-metric"><strong>{metrics.delta >= 0 ? "+" : ""}{metrics.delta.toFixed(0)}%</strong><span>en {experiment.metricLabel.toLowerCase()}</span></div>
-          <div className="comparison final-comparison"><div><small>Antes</small><strong>{experiment.baseline.toFixed(1)}{experiment.metricUnit}</strong></div><span>→</span><div><small>Durante</small><strong>{metrics.average.toFixed(1)}{experiment.metricUnit}</strong></div></div>
+          <div className="final-metric"><strong>{metrics.delta >= 0 ? "+" : ""}{metrics.delta.toFixed(0)}%</strong><span>en {current.metricLabel.toLowerCase()}</span></div>
+          <div className="comparison final-comparison"><div><small>Antes</small><strong>{current.baseline.toFixed(1)}{current.metricUnit}</strong></div><span>→</span><div><small>Durante</small><strong>{metrics.average.toFixed(1)}{current.metricUnit}</strong></div></div>
           <p className="final-context">{metrics.done} check-ins · {day} días desde que empezaste. El resultado se basa en tus propios registros y no pretende ser evidencia científica.</p>
           <div className="final-actions"><button className="button button-primary" type="button" onClick={shareResult}>{shareState}</button><Link className="button button-secondary" href="/app/discover">Probar otra cosa</Link></div>
         </section>
-        <section className="history-card"><div className="section-row"><div><p className="eyebrow">HISTORIAL</p><h2>Los datos detrás del resultado</h2></div></div><div className="entry-list">{[...experiment.entries].reverse().map((entry) => <div className="entry-row" key={entry.date}><span>{entry.date}</span><span>{entry.completed ? "✓ Hecho" : "— No"}</span><strong>{entry.value}{experiment.metricUnit}</strong><span className="entry-note">{entry.note ?? ""}</span></div>)}</div></section>
+        <section className="history-card"><div className="section-row"><div><p className="eyebrow">HISTORIAL</p><h2>Los datos detrás del resultado</h2></div></div><div className="entry-list">{[...current.entries].reverse().map((entry) => <div className="entry-row" key={entry.date}><span>{entry.date}</span><span>{entry.completed ? "✓ Hecho" : "— No"}</span><strong>{entry.value}{current.metricUnit}</strong><span className="entry-note">{entry.note ?? ""}</span></div>)}</div></section>
       </main>
     );
   }
@@ -116,8 +117,8 @@ export default function ExperimentDetailPage() {
     <main className="product-page detail-page">
       <Link className="back-link" href="/app">← Mis experimentos</Link>
       <section className="detail-hero">
-        <div className="detail-title"><span className="experiment-icon xl">{experiment.emoji}</span><div><small className="category-label">{experiment.category}</small><h1>{experiment.title}</h1><p>{experiment.hypothesis}</p></div></div>
-        <div className="detail-progress"><div><strong>Día {day}</strong><span>de {experiment.durationDays}</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><small>{progress}% completado</small></div>
+        <div className="detail-title"><span className="experiment-icon xl">{current.emoji}</span><div><small className="category-label">{current.category}</small><h1>{current.title}</h1><p>{current.hypothesis}</p></div></div>
+        <div className="detail-progress"><div><strong>Día {day}</strong><span>de {current.durationDays}</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div><small>{progress}% completado</small></div>
       </section>
 
       <div className="detail-grid">
@@ -125,9 +126,9 @@ export default function ExperimentDetailPage() {
           <p className="eyebrow">CHECK-IN DE HOY</p><h2>¿Cómo ha ido?</h2>
           <form onSubmit={submit}>
             <div className="binary-row"><button type="button" className={completed ? "binary active" : "binary"} onClick={() => setCompleted(true)}>✓ Sí, lo hice</button><button type="button" className={!completed ? "binary active" : "binary"} onClick={() => setCompleted(false)}>No hoy</button></div>
-            <label className="range-label"><span>{experiment.metricLabel}</span><strong>{value}{experiment.metricUnit}</strong></label>
-            <input className="range" type="range" min={experiment.metricMin} max={experiment.metricMax} step={0.5} value={value} onChange={(event) => setValue(Number(event.target.value))} />
-            <div className="range-scale"><span>{experiment.metricMin}</span><span>{experiment.metricMax}</span></div>
+            <label className="range-label"><span>{current.metricLabel}</span><strong>{value}{current.metricUnit}</strong></label>
+            <input className="range" type="range" min={current.metricMin} max={current.metricMax} step={0.5} value={value} onChange={(event) => setValue(Number(event.target.value))} />
+            <div className="range-scale"><span>{current.metricMin}</span><span>{current.metricMax}</span></div>
             <label><span>Nota opcional</span><textarea rows={2} value={note} onChange={(event) => setNote(event.target.value)} placeholder="¿Algo que pueda explicar el resultado?" /></label>
             <button className="button button-primary full" type="submit">{saved ? "✓ Guardado" : "Guardar check-in"}</button>
           </form>
@@ -135,14 +136,14 @@ export default function ExperimentDetailPage() {
 
         <section className="result-card">
           <p className="eyebrow">SEÑAL HASTA AHORA</p><div className="result-number"><strong>{metrics.delta >= 0 ? "+" : ""}{metrics.delta.toFixed(0)}%</strong><span>vs. tu punto de partida</span></div>
-          <div className="comparison"><div><small>Antes</small><strong>{experiment.baseline.toFixed(1)}{experiment.metricUnit}</strong></div><span>→</span><div><small>Durante</small><strong>{metrics.average.toFixed(1)}{experiment.metricUnit}</strong></div></div>
+          <div className="comparison"><div><small>Antes</small><strong>{current.baseline.toFixed(1)}{current.metricUnit}</strong></div><span>→</span><div><small>Durante</small><strong>{metrics.average.toFixed(1)}{current.metricUnit}</strong></div></div>
           <p className="result-note">{metrics.done < 3 ? "Aún hay pocos datos. Con 3 check-ins podrás obtener un primer resultado." : metrics.delta > 8 ? "La señal es positiva. Puedes seguir hasta el final o cerrar la prueba cuando ya tengas suficiente información." : metrics.delta < -8 ? "Por ahora el cambio no está mejorando esta métrica." : "Por ahora el cambio parece tener poco efecto sobre esta métrica."}</p>
           <small>{metrics.done} check-ins completados</small>
           <button className="button button-secondary full finish-button" type="button" disabled={metrics.done < 3} onClick={finishExperiment}>{metrics.done < 3 ? `Necesitas ${3 - metrics.done} check-in${3 - metrics.done === 1 ? "" : "s"} más` : "Finalizar y ver resultado →"}</button>
         </section>
       </div>
 
-      <section className="history-card"><div className="section-row"><div><p className="eyebrow">HISTORIAL</p><h2>Lo que has registrado</h2></div></div>{experiment.entries.length ? <div className="entry-list">{[...experiment.entries].reverse().map((entry) => <div className="entry-row" key={entry.date}><span>{entry.date}</span><span>{entry.completed ? "✓ Hecho" : "— No"}</span><strong>{entry.value}{experiment.metricUnit}</strong><span className="entry-note">{entry.note ?? ""}</span></div>)}</div> : <p className="muted">Tu primer check-in aparecerá aquí.</p>}</section>
+      <section className="history-card"><div className="section-row"><div><p className="eyebrow">HISTORIAL</p><h2>Lo que has registrado</h2></div></div>{current.entries.length ? <div className="entry-list">{[...current.entries].reverse().map((entry) => <div className="entry-row" key={entry.date}><span>{entry.date}</span><span>{entry.completed ? "✓ Hecho" : "— No"}</span><strong>{entry.value}{current.metricUnit}</strong><span className="entry-note">{entry.note ?? ""}</span></div>)}</div> : <p className="muted">Tu primer check-in aparecerá aquí.</p>}</section>
     </main>
   );
 }
