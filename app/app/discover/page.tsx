@@ -30,7 +30,7 @@ export default function DiscoverPage() {
 
   return (
     <main className="product-page lab-discover-page">
-      <div className="lab-page-index"><span>ITERА / REFERENCE LIBRARY</span><span>{catalog.length.toString().padStart(2, "0")} FICHAS</span></div>
+      <div className="lab-page-index"><span>ITERA / REFERENCE LIBRARY</span><span>{catalog.length.toString().padStart(2, "0")} FICHAS</span></div>
       <header className="product-header lab-product-header"><div><p className="eyebrow">BIBLIOTECA DE PRUEBAS</p><h1>¿Qué quieres poner a prueba?</h1><p>Elige una ficha, cambia una sola cosa y registra una señal concreta durante unos días.</p></div></header>
 
       <div className="library-tools">
