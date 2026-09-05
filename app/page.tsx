@@ -12,7 +12,7 @@ export default function LandingPage() {
     <main className="landing">
       <nav className="landing-nav shell">
         <Link href="/" className="brand"><span className="brand-mark">i</span><span>itera</span></Link>
-        <Link className="nav-cta" href="/app">Abrir It era</Link>
+        <Link className="nav-cta" href="/app">Abrir Itera</Link>
       </nav>
 
       <section className="hero shell">

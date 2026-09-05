@@ -69,15 +69,15 @@ export function saveExperiment(experiment: Experiment) {
 }
 
 export function createFromTemplate(template: ExperimentTemplate) {
+  const { slug: _slug, ...templateData } = template;
   const experiment: Experiment = {
-    ...template,
+    ...templateData,
     id: `${template.slug}-${Date.now()}`,
     startDate: isoDate(0),
     status: "active",
     entries: [],
   };
-  const { slug: _slug, popularity: _popularity, ...clean } = experiment as Experiment & { slug?: string; popularity?: number };
-  return saveExperiment(clean);
+  return saveExperiment(experiment);
 }
 
 export function findTemplate(slug: string) {

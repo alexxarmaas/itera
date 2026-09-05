@@ -28,7 +28,7 @@ export default function DiscoverPage() {
           <article className="catalog-card" key={item.slug}>
             <div className="catalog-top"><span className="experiment-icon large">{item.emoji}</span><span className="pill">{item.durationDays} días</span></div>
             <div><small className="category-label">{item.category}</small><h2>{item.title}</h2><p>{item.description}</p></div>
-            <div className="catalog-meta"><span>{item.popularity.toLocaleString("es-ES")} lo han probado</span><span>·</span><span>Mide {item.metricLabel.toLowerCase()}</span></div>
+            <div className="catalog-meta"><span>{item.durationDays} días de prueba</span><span>·</span><span>Mide {item.metricLabel.toLowerCase()}</span></div>
             <button type="button" className="button button-primary full" onClick={() => start(item.slug)}>Probar este experimento</button>
           </article>
         ))}

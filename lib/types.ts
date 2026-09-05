@@ -38,5 +38,4 @@ export type ExperimentTemplate = {
   metricMax: number;
   metricUnit: string;
   baseline: number;
-  popularity: number;
 };

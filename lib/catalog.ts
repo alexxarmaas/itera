@@ -14,7 +14,6 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 6,
-    popularity: 8427,
   },
   {
     slug: "no-tiktok-week",
@@ -29,7 +28,6 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 6,
-    popularity: 12842,
   },
   {
     slug: "deep-work-50-10",
@@ -44,7 +42,6 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 6,
-    popularity: 4921,
   },
   {
     slug: "morning-workout",
@@ -59,7 +56,6 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 6,
-    popularity: 3184,
   },
   {
     slug: "no-spend-week",
@@ -74,7 +70,6 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 5,
-    popularity: 3721,
   },
   {
     slug: "music-vs-silence",
@@ -89,6 +84,5 @@ export const catalog: ExperimentTemplate[] = [
     metricMax: 10,
     metricUnit: "/10",
     baseline: 6,
-    popularity: 2179,
   },
 ];
