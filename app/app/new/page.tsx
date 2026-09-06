@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveExperiment } from "@/lib/storage";
+import { saveExperiment, todayKey } from "@/lib/storage";
 import { Experiment, ExperimentMode } from "@/lib/types";
 
 const categories = ["Productividad", "Sueño", "Energía", "Vida digital", "Dinero", "Estudio", "Otro"];
@@ -60,7 +60,7 @@ export default function NewExperimentPage() {
       category,
       description: hypothesis.trim() || `Experimento personal de ${duration} días.`,
       durationDays: duration,
-      startDate: new Date().toISOString().slice(0, 10),
+      startDate: todayKey(),
       status: "active",
       mode,
       phase: baselineDays > 0 ? "baseline" : "test",
