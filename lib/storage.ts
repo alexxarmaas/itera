@@ -1,31 +1,81 @@
 import { catalog } from "./catalog";
-import { Experiment, ExperimentTemplate } from "./types";
+import { addDaysKey, dateDiff, localDateKey } from "./dates";
+import { Experiment, ExperimentEntry, ExperimentTemplate } from "./types";
 
 const KEY = "itera.experiments.v1";
 
-function isoDate(offsetDays = 0) {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().slice(0, 10);
+function entryKey(entry: ExperimentEntry) {
+  return `${entry.date}|${entry.phase ?? "test"}|${entry.variant ?? ""}`;
 }
 
-function dateDiff(start: string, end: string) {
-  const a = new Date(`${start}T12:00:00`);
-  const b = new Date(`${end}T12:00:00`);
-  return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 86400000));
+function sanitizeEntries(experiment: Experiment) {
+  const byKey = new Map<string, ExperimentEntry>();
+  const min = Number.isFinite(experiment.metricMin) ? experiment.metricMin : 1;
+  const max = Number.isFinite(experiment.metricMax) ? experiment.metricMax : 10;
+  const fallback = Number.isFinite(experiment.baseline) ? experiment.baseline : min;
+
+  for (const raw of experiment.entries ?? []) {
+    if (!raw?.date) continue;
+    const phase = raw.phase ?? "test";
+    const numeric = Number(raw.value);
+    const value = Math.min(max, Math.max(min, Number.isFinite(numeric) ? numeric : fallback));
+    const entry: ExperimentEntry = {
+      ...raw,
+      value,
+      phase,
+      completed: phase === "baseline" ? true : Boolean(raw.completed),
+      variant: phase === "baseline" ? undefined : raw.variant,
+    };
+    byKey.set(entryKey(entry), entry);
+  }
+
+  return [...byKey.values()].sort((a, b) => {
+    const dateOrder = a.date.localeCompare(b.date);
+    if (dateOrder !== 0) return dateOrder;
+    return entryKey(a).localeCompare(entryKey(b));
+  });
+}
+
+function average(entries: ExperimentEntry[], fallback: number) {
+  if (!entries.length) return fallback;
+  return entries.reduce((sum, entry) => sum + entry.value, 0) / entries.length;
 }
 
 function normalizeExperiment(experiment: Experiment): Experiment {
   const mode = experiment.mode ?? "single";
-  const baselineDays = experiment.baselineDays ?? 0;
+  const baselineDays = mode === "ab" ? 0 : Math.max(0, experiment.baselineDays ?? 0);
+  const entries = sanitizeEntries(experiment);
+  const observed = entries.filter((entry) => entry.phase === "baseline");
+
+  let baseline = Number.isFinite(experiment.baseline) ? experiment.baseline : experiment.metricMin;
+  let phase = mode === "ab" ? "test" as const : experiment.phase ?? "test";
+  let baselineCompletedDate = mode === "ab" ? undefined : experiment.baselineCompletedDate;
+  let startDate = experiment.startDate || todayKey();
+
+  if (mode === "single" && baselineDays > 0 && observed.length) {
+    baseline = average(observed, baseline);
+  }
+
+  // If persisted/imported data already contains enough baseline observations,
+  // complete the phase deterministically. Once the test has started we never
+  // rewrite startDate just because a past baseline value was corrected.
+  if (mode === "single" && baselineDays > 0 && phase === "baseline" && observed.length >= baselineDays) {
+    const completionDate = observed.at(-1)?.date ?? todayKey();
+    phase = "test";
+    baselineCompletedDate = completionDate;
+    startDate = addDaysKey(completionDate, 1);
+  }
+
   return {
     ...experiment,
     mode,
-    phase: experiment.phase ?? "test",
+    phase,
     baselineDays,
-    pausedDays: experiment.pausedDays ?? 0,
-    entries: experiment.entries.map((entry) => ({ ...entry, phase: entry.phase ?? "test" })),
+    baseline,
+    baselineCompletedDate,
+    startDate,
+    pausedDays: Math.max(0, experiment.pausedDays ?? 0),
+    entries,
   };
 }
 
@@ -37,7 +87,7 @@ const seed: Experiment[] = [
     category: "Sueño",
     description: "Dejar el móvil antes de dormir y comprobar si descanso mejor.",
     durationDays: 14,
-    startDate: isoDate(-7),
+    startDate: localDateKey(-7),
     status: "active",
     hypothesis: "Dormiré mejor si dejo de mirar el móvil antes de acostarme.",
     metricLabel: "Calidad del sueño",
@@ -49,13 +99,13 @@ const seed: Experiment[] = [
     phase: "test",
     baselineDays: 0,
     entries: [
-      { date: isoDate(-7), completed: true, value: 6.8, phase: "test" },
-      { date: isoDate(-6), completed: true, value: 7.1, phase: "test" },
-      { date: isoDate(-5), completed: false, value: 6.0, note: "Salí tarde", phase: "test" },
-      { date: isoDate(-4), completed: true, value: 7.4, phase: "test" },
-      { date: isoDate(-3), completed: true, value: 7.6, phase: "test" },
-      { date: isoDate(-2), completed: true, value: 7.3, phase: "test" },
-      { date: isoDate(-1), completed: true, value: 7.8, phase: "test" },
+      { date: localDateKey(-7), completed: true, value: 6.8, phase: "test" },
+      { date: localDateKey(-6), completed: true, value: 7.1, phase: "test" },
+      { date: localDateKey(-5), completed: false, value: 6.0, note: "Salí tarde", phase: "test" },
+      { date: localDateKey(-4), completed: true, value: 7.4, phase: "test" },
+      { date: localDateKey(-3), completed: true, value: 7.6, phase: "test" },
+      { date: localDateKey(-2), completed: true, value: 7.3, phase: "test" },
+      { date: localDateKey(-1), completed: true, value: 7.8, phase: "test" },
     ],
   },
 ];
@@ -95,6 +145,30 @@ export function deleteExperiment(id: string) {
   saveExperiments(loadExperiments().filter((experiment) => experiment.id !== id));
 }
 
+export function removeExperimentEntry(id: string, target: ExperimentEntry) {
+  const experiment = getExperiment(id);
+  if (!experiment) return { experiment: undefined, blocked: false, reason: undefined as string | undefined };
+
+  const isBaseline = (target.phase ?? "test") === "baseline";
+  const required = Math.max(0, experiment.baselineDays ?? 0);
+  const baselineCount = experiment.entries.filter((entry) => entry.phase === "baseline").length;
+  const baselineAlreadyClosed = (experiment.phase ?? "test") === "test" && required > 0;
+
+  if (isBaseline && baselineAlreadyClosed && baselineCount <= required) {
+    return {
+      experiment,
+      blocked: true,
+      reason: "Esta observación forma parte del baseline que ya está usando la prueba. Puedes corregir su valor, pero no borrarla sin dejar el punto de partida incompleto.",
+    };
+  }
+
+  const next = saveExperiment({
+    ...experiment,
+    entries: experiment.entries.filter((entry) => entryKey(entry) !== entryKey(target)),
+  });
+  return { experiment: next, blocked: false, reason: undefined as string | undefined };
+}
+
 export function pauseExperiment(id: string) {
   const experiment = getExperiment(id);
   if (!experiment || experiment.status !== "active") return experiment;
@@ -104,7 +178,7 @@ export function pauseExperiment(id: string) {
 export function resumeExperiment(id: string) {
   const experiment = getExperiment(id);
   if (!experiment || experiment.status !== "paused") return experiment;
-  const addedPausedDays = experiment.pausedAt ? dateDiff(experiment.pausedAt, todayKey()) : 0;
+  const addedPausedDays = experiment.pausedAt ? Math.max(0, dateDiff(experiment.pausedAt, todayKey())) : 0;
   return saveExperiment({
     ...experiment,
     status: "active",
@@ -147,7 +221,7 @@ export function createFromTemplate(template: ExperimentTemplate) {
   const experiment: Experiment = {
     ...templateData,
     id: `${template.slug}-${Date.now()}`,
-    startDate: isoDate(0),
+    startDate: todayKey(),
     status: "active",
     mode: "single",
     phase: baselineDays > 0 ? "baseline" : "test",
@@ -163,9 +237,9 @@ export function findTemplate(slug: string) {
 }
 
 export function todayKey() {
-  return isoDate(0);
+  return localDateKey(0);
 }
 
 export function tomorrowKey() {
-  return isoDate(1);
+  return localDateKey(1);
 }
