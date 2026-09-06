@@ -1,22 +1,12 @@
 import { Experiment } from "@/lib/types";
-import { baselineEntries, currentABVariant } from "@/lib/results";
-
-function addDays(dateString: string, days: number) {
-  const date = new Date(`${dateString}T12:00:00`);
-  date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function todayKey() {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  return date.toISOString().slice(0, 10);
-}
+import { addDaysKey, localDateKey } from "@/lib/dates";
+import { baselineEntries } from "@/lib/results";
 
 export default function ExperimentCalendar({ experiment }: { experiment: Experiment }) {
   const baseline = baselineEntries(experiment).sort((a, b) => a.date.localeCompare(b.date));
-  const today = todayKey();
+  const today = localDateKey();
   const mode = experiment.mode ?? "single";
+  const pausedShift = Math.max(0, experiment.pausedDays ?? 0);
 
   return (
     <section className="experiment-calendar">
@@ -25,8 +15,10 @@ export default function ExperimentCalendar({ experiment }: { experiment: Experim
       <div className="calendar-weekdays">{["L","M","X","J","V","S","D"].map((day) => <span key={day}>{day}</span>)}</div>
       <div className="calendar-grid">
         {Array.from({ length: experiment.durationDays }, (_, index) => {
-          const date = addDays(experiment.startDate, index);
-          const expectedVariant = mode === "ab" ? (index % 2 === 0 ? "A" : "B") : undefined;
+          const date = addDaysKey(experiment.startDate, index);
+          const stored = experiment.entries.find((item) => (item.phase ?? "test") === "test" && item.date === date);
+          const adjustedIndex = Math.max(0, index - pausedShift);
+          const expectedVariant = mode === "ab" ? (stored?.variant ?? (adjustedIndex % 2 === 0 ? "A" : "B")) : undefined;
           const entry = experiment.entries.find((item) => (item.phase ?? "test") === "test" && item.date === date && (!expectedVariant || item.variant === expectedVariant));
           const future = date > today;
           const state = entry ? (entry.completed ? "done" : "miss") : future ? "future" : "empty";
