@@ -1,16 +1,5 @@
+import { dateDiff, localDateKey } from "./dates";
 import { Experiment, ExperimentEntry, ExperimentVariant } from "./types";
-
-function dateDiff(start: string, end: string) {
-  const a = new Date(`${start}T12:00:00`);
-  const b = new Date(`${end}T12:00:00`);
-  return Math.floor((b.getTime() - a.getTime()) / 86400000);
-}
-
-function todayKey() {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  return date.toISOString().slice(0, 10);
-}
 
 export function baselineEntries(experiment: Experiment) {
   return experiment.entries.filter((entry) => entry.phase === "baseline");
@@ -22,10 +11,10 @@ export function testEntries(experiment: Experiment) {
 
 export function effectiveExperimentDay(experiment: Experiment) {
   if ((experiment.phase ?? "test") === "baseline") return 0;
-  const elapsed = dateDiff(experiment.startDate, todayKey()) + 1;
+  const elapsed = dateDiff(experiment.startDate, localDateKey()) + 1;
   if (elapsed <= 0) return 0;
   const historicalPause = experiment.pausedDays ?? 0;
-  const currentPause = experiment.status === "paused" && experiment.pausedAt ? Math.max(0, dateDiff(experiment.pausedAt, todayKey())) : 0;
+  const currentPause = experiment.status === "paused" && experiment.pausedAt ? Math.max(0, dateDiff(experiment.pausedAt, localDateKey())) : 0;
   return Math.max(0, Math.min(experiment.durationDays, elapsed - historicalPause - currentPause));
 }
 
@@ -50,9 +39,32 @@ function average(entries: ExperimentEntry[], fallback: number) {
   return entries.length ? entries.reduce((sum, entry) => sum + entry.value, 0) / entries.length : fallback;
 }
 
+export function baselineProgress(experiment: Experiment) {
+  const entries = baselineEntries(experiment);
+  const required = Math.max(0, experiment.baselineDays ?? 0);
+  const uniqueDays = new Set(entries.map((entry) => entry.date)).size;
+  return {
+    done: uniqueDays,
+    required,
+    average: average(entries, experiment.baseline),
+    complete: required === 0 || uniqueDays >= required,
+    source: required > 0 ? "observed" as const : "manual" as const,
+  };
+}
+
+export function baselineIntegrity(experiment: Experiment) {
+  const progress = baselineProgress(experiment);
+  const requiresObserved = (experiment.mode ?? "single") === "single" && progress.required > 0;
+  return {
+    ...progress,
+    valid: !requiresObserved || progress.complete,
+  };
+}
+
 export function experimentMetrics(experiment: Experiment) {
   const entries = testEntries(experiment).filter((entry) => entry.completed);
   const progress = experimentProgress(experiment);
+  const baselineState = baselineIntegrity(experiment);
 
   if ((experiment.mode ?? "single") === "ab") {
     const a = entries.filter((entry) => entry.variant === "A");
@@ -80,21 +92,29 @@ export function experimentMetrics(experiment: Experiment) {
 
   const averageValue = average(entries, experiment.baseline);
   const delta = ((averageValue - experiment.baseline) / Math.max(Math.abs(experiment.baseline), 0.1)) * 100;
-  const evidence = entries.length >= 7 && progress.coverage >= 0.7 ? "sólida" : entries.length >= 4 && progress.coverage >= 0.45 ? "moderada" : "inicial";
+  const evidence = !baselineState.valid
+    ? "inicial"
+    : entries.length >= 7 && progress.coverage >= 0.7
+      ? "sólida"
+      : entries.length >= 4 && progress.coverage >= 0.45
+        ? "moderada"
+        : "inicial";
 
   return {
     average: averageValue,
     delta,
     done: entries.length,
     verdict:
-      entries.length < 3
-        ? "Aún no hay datos suficientes"
-        : delta > 8
-          ? "Sí, parece funcionarte"
-          : delta < -8
-            ? "No parece ayudarte"
-            : "No hay una señal clara",
-    tone: entries.length < 3 ? "neutral" : delta > 8 ? "positive" : delta < -8 ? "negative" : "neutral",
+      !baselineState.valid
+        ? "El baseline está incompleto"
+        : entries.length < 3
+          ? "Aún no hay datos suficientes"
+          : delta > 8
+            ? "Sí, parece funcionarte"
+            : delta < -8
+              ? "No parece ayudarte"
+              : "No hay una señal clara",
+    tone: !baselineState.valid || entries.length < 3 ? "neutral" : delta > 8 ? "positive" : delta < -8 ? "negative" : "neutral",
     aAverage: 0,
     bAverage: 0,
     aCount: 0,
@@ -107,16 +127,6 @@ export function experimentMetrics(experiment: Experiment) {
 export function canFinishExperiment(experiment: Experiment) {
   const metrics = experimentMetrics(experiment);
   if ((experiment.mode ?? "single") === "ab") return metrics.aCount >= 2 && metrics.bCount >= 2;
+  if (!baselineIntegrity(experiment).valid) return false;
   return metrics.done >= 3;
-}
-
-export function baselineProgress(experiment: Experiment) {
-  const entries = baselineEntries(experiment);
-  const required = Math.max(0, experiment.baselineDays ?? 0);
-  return {
-    done: entries.length,
-    required,
-    average: average(entries, experiment.baseline),
-    complete: required === 0 || entries.length >= required,
-  };
 }
